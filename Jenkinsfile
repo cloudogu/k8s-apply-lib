@@ -28,7 +28,6 @@ node('docker') {
     timestamps {
         stage('Checkout') {
             checkout scm
-            make 'clean'
         }
 
         stage('SonarQube') {
