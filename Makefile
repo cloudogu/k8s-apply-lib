@@ -3,6 +3,7 @@ VERSION=0.1.0
 GOTAG?=1.18
 MAKEFILES_VERSION=6.0.1
 .DEFAULT_GOAL:=default
+LINT_VERSION=v1.45.2
 
 include build/make/variables.mk
 include build/make/self-update.mk
