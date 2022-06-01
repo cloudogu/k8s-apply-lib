@@ -13,6 +13,7 @@ github = new GitHub(this, git)
 changelog = new Changelog(this)
 Docker docker = new Docker(this)
 gpg = new Gpg(this, docker)
+goVersion = "1.18"
 
 // Configuration of repository
 repositoryOwner = "cloudogu"
@@ -30,8 +31,26 @@ node('docker') {
             checkout scm
         }
 
+        new Docker(this)
+                .image("golang:${goVersion}")
+                .mountJenkinsUser()
+                .inside("--volume ${WORKSPACE}:/go/src/${project} -w /go/src/${project}") {
+                    stage('Unit test') {
+                        make 'unit-test'
+                    }
+
+                    stage("Review dog analysis") {
+                        stageStaticAnalysisReviewDog()
+                    }
+                }
+
         stage('SonarQube') {
             stageStaticAnalysisSonarQube()
+        }
+
+
+        stage('Release') {
+            stageAutomaticRelease()
         }
     }
 }
@@ -42,6 +61,16 @@ void gitWithCredentials(String command) {
                 script: "git -c credential.helper=\"!f() { echo username='\$GIT_AUTH_USR'; echo password='\$GIT_AUTH_PSW'; }; f\" " + command,
                 returnStdout: true
         )
+    }
+}
+
+void stageStaticAnalysisReviewDog() {
+    def commitSha = sh(returnStdout: true, script: 'git rev-parse HEAD').trim()
+
+    withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: 'sonarqube-gh', usernameVariable: 'USERNAME', passwordVariable: 'REVIEWDOG_GITHUB_API_TOKEN']]) {
+        withEnv(["CI_PULL_REQUEST=${env.CHANGE_ID}", "CI_COMMIT=${commitSha}", "CI_REPO_OWNER=${repositoryOwner}", "CI_REPO_NAME=${repositoryName}"]) {
+            make 'static-analysis-ci'
+        }
     }
 }
 
@@ -74,4 +103,22 @@ void stageStaticAnalysisSonarQube() {
             unstable("Pipeline unstable due to SonarQube quality gate failure")
         }
     }
+}
+
+void stageAutomaticRelease() {
+    if (gitflow.isReleaseBranch()) {
+        String releaseVersion = git.getSimpleBranchName()
+
+        stage('Finish Release') {
+            gitflow.finishRelease(releaseVersion, productionReleaseBranch)
+        }
+
+        stage('Add Github-Release') {
+            releaseId = github.createReleaseWithChangelog(releaseVersion, changelog, productionReleaseBranch)
+        }
+    }
+}
+
+void make(String makeArgs) {
+    sh "make ${makeArgs}"
 }
