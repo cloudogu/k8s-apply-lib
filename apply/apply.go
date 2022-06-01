@@ -20,7 +20,10 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
-type ApplyClient struct {
+// YamlDocument is an alias type for exactly one single YAML document
+type YamlDocument []byte
+
+type Applier struct {
 	gvrMapper meta.RESTMapper
 	dynClient dynamic.Interface
 	scheme    *runtime.Scheme
@@ -33,7 +36,7 @@ type ApplyClient struct {
 //
 //  applier, scheme, err := apply.New(config)
 //  yourCrdGroupVersion.AddToScheme(scheme)
-func New(clusterConfig *rest.Config) (*ApplyClient, *runtime.Scheme, error) {
+func New(clusterConfig *rest.Config) (*Applier, *runtime.Scheme, error) {
 	gvrMapper, err := createGVRMapper(clusterConfig)
 	if err != nil {
 		return nil, nil, fmt.Errorf("error while creating k8s apply client: %w", err)
@@ -45,13 +48,32 @@ func New(clusterConfig *rest.Config) (*ApplyClient, *runtime.Scheme, error) {
 
 	schemeForCrdHandling := runtime.NewScheme()
 
-	return &ApplyClient{
+	return &Applier{
 			gvrMapper: gvrMapper,
 			dynClient: dynCli,
 			scheme:    schemeForCrdHandling,
 		},
 		schemeForCrdHandling,
 		nil
+}
+
+// NewBuilder creates a convenience builder that simplifies the Applier usage and adds often-sought features, like
+// doc splitting or templating
+//
+// Usage:
+//  err := apply.New(restConfig).NewBuilder().
+//    WithNamespace("my-namespace").
+//	  WithYamlResource(myfile, content).
+//	  WithTemplate(myfile, templateObject).
+//	  WithYamlResource(myfile2, content2).
+//	  WithTemplate(myfile2, templateObject2).
+//    ExecuteApply()
+func (ac *Applier) NewBuilder() *Builder {
+	return &Builder{
+		applier:               ac,
+		fileToGenericResource: make(map[string][]byte),
+		fileToTemplate:        make(map[string]interface{}),
+	}
 }
 
 func createGVRMapper(config *rest.Config) (meta.RESTMapper, error) {
@@ -75,12 +97,12 @@ func createDynamicClient(config *rest.Config) (dynamic.Interface, error) {
 }
 
 // Apply sends a request to the K8s API with the provided YAML resource in order to apply them to the current cluster.
-func (ac *ApplyClient) Apply(yamlResource []byte, namespace string) error {
+func (ac *Applier) Apply(yamlResource YamlDocument, namespace string) error {
 	return ac.ApplyWithOwner(yamlResource, namespace, nil)
 }
 
 // ApplyWithOwner sends a request to the K8s API with the provided YAML resource in order to apply them to the current cluster.
-func (ac *ApplyClient) ApplyWithOwner(yamlResource []byte, namespace string, owningResource metav1.Object) error {
+func (ac *Applier) ApplyWithOwner(yamlResource YamlDocument, namespace string, owningResource metav1.Object) error {
 	logrus.Debug("Applying K8s resource")
 	logrus.Debug(string(yamlResource))
 
