@@ -17,6 +17,9 @@ const (
 	testNamespace = "le-namespace"
 )
 
+//go:embed testdata/single-doc.yaml
+var singleDocYamlBytes []byte
+
 //go:embed testdata/multi-doc.yaml
 var multiDocYamlBytes []byte
 
@@ -161,6 +164,102 @@ func Test_renderTemplate(t *testing.T) {
 
 		require.Error(t, err)
 		assert.Equal(t, "failed to parse template for file /dir/file1.yaml: template: t:1: unclosed action", err.Error())
+	})
+}
+
+func TestBuilder_ExecuteApply(t *testing.T) {
+	t.Run("should apply a simple file resource", func(t *testing.T) {
+		// given
+		doc1 := YamlDocument(singleDocYamlBytes)
+		owner := &v1.ServiceAccount{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: "v1",
+				Kind:       "ServiceAccount",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "le-service-account",
+				Namespace: testNamespace,
+			},
+		}
+		mockedApplier := &mockApplier{}
+		mockedApplier.On("ApplyWithOwner", doc1, testNamespace, owner).Return(nil)
+
+		sut := &Builder{
+			applier:               mockedApplier,
+			fileToGenericResource: make(map[string][]byte),
+			fileToTemplate:        make(map[string]interface{}),
+		}
+
+		// when
+		err := sut.WithNamespace(testNamespace).
+			WithOwner(owner).
+			WithYamlResource(testFile1, doc1).
+			ExecuteApply()
+
+		// then
+		require.NoError(t, err)
+		mockedApplier.AssertExpectations(t)
+	})
+	t.Run("should apply file resource with owner", func(t *testing.T) {
+		// given
+		doc1 := YamlDocument(singleDocYamlBytes)
+		mockedApplier := &mockApplier{}
+		mockedApplier.On("ApplyWithOwner", doc1, testNamespace, nil).Return(nil)
+
+		sut := &Builder{
+			applier:               mockedApplier,
+			fileToGenericResource: make(map[string][]byte),
+			fileToTemplate:        make(map[string]interface{}),
+		}
+
+		// when
+		err := sut.WithNamespace(testNamespace).
+			WithYamlResource(testFile1, doc1).
+			ExecuteApply()
+
+		// then
+		require.NoError(t, err)
+		mockedApplier.AssertExpectations(t)
+	})
+	t.Run("should apply multi doc file resource with template object", func(t *testing.T) {
+		// given
+		expectedNamespaceDoc := YamlDocument(`apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    something: different
+  name: le-namespace
+`)
+		expectedServiceAccountDoc := YamlDocument(`apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: another-service-account
+`)
+		mockedApplier := &mockApplier{}
+		mockedApplier.On("ApplyWithOwner", expectedNamespaceDoc, testNamespace, nil).Return(nil)
+		mockedApplier.On("ApplyWithOwner", expectedServiceAccountDoc, testNamespace, nil).Return(nil)
+
+		sut := &Builder{
+			applier:               mockedApplier,
+			fileToGenericResource: make(map[string][]byte),
+			fileToTemplate:        make(map[string]interface{}),
+		}
+		doc := YamlDocument(multiDocYamlTemplateBytes)
+		templateObj := struct {
+			Namespace string
+		}{
+			Namespace: testNamespace,
+		}
+
+		// when
+		err := sut.WithNamespace(testNamespace).
+			WithYamlResource(testFile2, doc).
+			WithTemplate(testFile2, templateObj).
+			ExecuteApply()
+
+		// then
+		require.NoError(t, err)
+		mockedApplier.AssertExpectations(t)
 	})
 }
 

@@ -24,7 +24,14 @@ func TestNew(t *testing.T) {
 	assert.NotNil(t, scheme)
 }
 
-func Test_k8sApplier_Apply(t *testing.T) {
+func Test_Applier_implements_interface(t *testing.T) {
+	sut, _, err := New(&rest.Config{})
+
+	require.NoError(t, err)
+	assert.Implements(t, (*applier)(nil), sut)
+}
+
+func Test_Applier_Apply(t *testing.T) {
 	t.Run("should create new namespaced resource with PATCH", func(t *testing.T) {
 		// given
 		expectedResourceGroupKind := schema.GroupKind{Group: "", Kind: "ServiceAccount"}
