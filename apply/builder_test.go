@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -130,4 +131,44 @@ func TestBuilder_WithOwner(t *testing.T) {
 		assert.NotNil(t, sut.owningResource)
 		assert.Equal(t, anyObject, sut.owningResource)
 	})
+}
+
+func Test_renderTemplate(t *testing.T) {
+	t.Run("should template namespace", func(t *testing.T) {
+		tempDoc := []byte(`hello {{ .Namespace }}`)
+		templateObj1 := struct {
+			Namespace string
+		}{
+			Namespace: testNamespace,
+		}
+
+		actual, err := renderTemplate(testFile1, tempDoc, templateObj1)
+
+		require.NoError(t, err)
+		expected := []byte(`hello le-namespace`)
+		assert.Equal(t, expected, actual)
+	})
+
+	t.Run("should return error", func(t *testing.T) {
+		tempDoc := []byte(`hello {{ .Namespace `)
+		templateObj1 := struct {
+			Namespace string
+		}{
+			Namespace: testNamespace,
+		}
+
+		_, err := renderTemplate(testFile1, tempDoc, templateObj1)
+
+		require.Error(t, err)
+		assert.Equal(t, "failed to parse template for file /dir/file1.yaml: template: t:1: unclosed action", err.Error())
+	})
+}
+
+type mockApplier struct {
+	mock.Mock
+}
+
+func (m *mockApplier) ApplyWithOwner(doc YamlDocument, namespace string, resource metav1.Object) error {
+	args := m.Called(doc, namespace, resource)
+	return args.Error(0)
 }

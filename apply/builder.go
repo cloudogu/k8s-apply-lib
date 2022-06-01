@@ -93,6 +93,25 @@ func (ab *Builder) renderTemplates() error {
 	return nil
 }
 
+func renderTemplate(filename string, templateText []byte, templateObject interface{}) ([]byte, error) {
+	const templateName = "t"
+	tpl := template.New(templateName)
+
+	parsed, err := tpl.Parse(string(templateText))
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse template for file %s: %w", filename, err)
+	}
+
+	resultWriter := bytes.NewBuffer([]byte{})
+
+	err = parsed.ExecuteTemplate(resultWriter, templateName, templateObject)
+	if err != nil {
+		return nil, fmt.Errorf("failed to render template for file %s: %w", filename, err)
+	}
+
+	return resultWriter.Bytes(), nil
+}
+
 func (ab *Builder) splitYamlDocs() map[string][]YamlDocument {
 	allSingleYamlDocs := make(map[string][]YamlDocument)
 	for filename, resource := range ab.fileToGenericResource {
@@ -116,23 +135,4 @@ func splitResourceIntoDocuments(resourceBytes []byte) []YamlDocument {
 	}
 
 	return cleanedResult
-}
-
-func renderTemplate(filename string, templateText []byte, templateObject interface{}) ([]byte, error) {
-	const templateName = "aTemplate"
-	tpl := template.New(templateName)
-
-	parsed, err := tpl.Parse(string(templateText))
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse template for file %s: %w", filename, err)
-	}
-
-	resultWriter := bytes.NewBuffer([]byte{})
-
-	err = parsed.ExecuteTemplate(resultWriter, templateName, templateObject)
-	if err != nil {
-		return nil, fmt.Errorf("failed to render template for file %s: %w", filename, err)
-	}
-
-	return resultWriter.Bytes(), nil
 }
