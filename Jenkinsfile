@@ -29,6 +29,7 @@ node('docker') {
     timestamps {
         stage('Checkout') {
             checkout scm
+            make 'clean'
         }
 
         new Docker(this)
