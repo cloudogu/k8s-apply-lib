@@ -8,13 +8,13 @@ A library to generically apply Kubernetes resources (similar to `kubectl`).
 
 ```go
 func yourCode() {
-	yamlBytes := readFile("/your/file.yaml")
-	
-	applier, _, err := apply.New(yourRestConfig)
-	err := applier.NewBuilder().
-		WithNamespace("your-namespace").
-		WithYamlResource("/your/file.yaml", doc).
-		ExecuteApply()
+  yamlBytes := readFile("/your/file.yaml")
+  
+  applier, _, err := apply.New(yourRestConfig)
+  err := applier.NewBuilder().
+    WithNamespace("your-namespace").
+    WithYamlResource("/your/file.yaml", doc).
+    ExecuteApply()
 }
 ```
 
@@ -39,18 +39,18 @@ Just add your templating data with the method `WithTemplating()`, and you're goo
 
 ```go
 func yourCode() {
-	filename := "/your/fileWithGoTemplating.yaml"
-	yamlBytes := readFile(filename)
+  filename := "/your/fileWithGoTemplating.yaml"
+  yamlBytes := readFile(filename)
    templateData := struct {
-	   Namespace string
+     Namespace string
    }{ Namespace: "your-namespace" }
    
-	applier, _, err := apply.New(yourRestConfig)
-	err := applier.NewBuilder().
-		WithNamespace("your-namespace").
-		WithYamlResource(filename, doc).
-		WithTemplating(filename, templateData).
-		ExecuteApply()
+  applier, _, err := apply.New(yourRestConfig)
+  err := applier.NewBuilder().
+    WithNamespace("your-namespace").
+    WithYamlResource(filename, doc).
+    WithTemplating(filename, templateData).
+    ExecuteApply()
 }
 ```
 
@@ -60,9 +60,9 @@ When working with your own CRDs inside a [Kubernetes Operator](https://kubernete
 
 ```go
 func yourCode() {
-	filename := "/your/fileWithGoTemplating.yaml"
-	yamlBytes := readFile(filename)
-	owner := &v1.ServiceAccount{
+  filename := "/your/fileWithGoTemplating.yaml"
+  yamlBytes := readFile(filename)
+  owner := &v1.ServiceAccount{
       TypeMeta: metav1.TypeMeta{
          APIVersion: "v1",
          Kind:       "ServiceAccount",
@@ -72,12 +72,12 @@ func yourCode() {
       },
    }
    
-	applier, _, err := apply.New(yourRestConfig)
-	err := applier.NewBuilder().
-		WithNamespace("your-namespace").
-		WithOwner(owner).
-		WithYamlResource(filename, doc).
-		ExecuteApply()
+  applier, _, err := apply.New(yourRestConfig)
+  err := applier.NewBuilder().
+    WithNamespace("your-namespace").
+    WithOwner(owner).
+    WithYamlResource(filename, doc).
+    ExecuteApply()
 }
 ```
 ### Advanced: Resource Collection
@@ -92,15 +92,15 @@ Please see the interface `PredicatedResourceCollector` in `Builder.go` for more 
 
 ```go
 func yourCode() {
-	filename := "/your/file.yaml"
-	yamlBytes := readFile(filename)
+  filename := "/your/file.yaml"
+  yamlBytes := readFile(filename)
    
-	applier, _, err := apply.New(yourRestConfig)
-	err := applier.NewBuilder().
-		WithNamespace("your-namespace").
+  applier, _, err := apply.New(yourRestConfig)
+  err := applier.NewBuilder().
+    WithNamespace("your-namespace").
       WithYamlResource(filename, doc).
       WithCollector(owner).
-		ExecuteApply()
+    ExecuteApply()
 }
 ```
 
