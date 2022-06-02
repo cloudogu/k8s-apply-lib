@@ -58,7 +58,7 @@ type Builder struct {
 	predicatedCollectors  []PredicatedResourceCollector
 }
 
-// NewBuilder creates a new builder
+// NewBuilder creates a new builder.
 func NewBuilder(applier applier) *Builder {
 	return &Builder{
 		applier:               applier,

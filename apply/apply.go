@@ -20,14 +20,16 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
-// YamlDocument is an alias type for exactly one single YAML document
-type YamlDocument []byte
-
+// Applier provides a way to apply unstructured Kubernetes resources to the API without knowing their respective schemes
+// beforehand.
 type Applier struct {
 	gvrMapper meta.RESTMapper
 	dynClient dynamic.Interface
 	scheme    *runtime.Scheme
 }
+
+// YamlDocument is an alias type for exactly one single YAML document.
+type YamlDocument []byte
 
 // New returns a `kubectl`-like apply client which operates on the K8s API with YAML resources.
 //
