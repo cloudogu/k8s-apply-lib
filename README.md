@@ -80,6 +80,29 @@ func yourCode() {
 		ExecuteApply()
 }
 ```
+### Advanced: Resource Collection
+
+Sometimes a resource being applied to the Kubernetes API needs to be re-used somewhere else (f. i. a ServiceAccount must be mounted by name). `k8s-apply-lib` provides a way of matching and collecting resources while they stream through the `Applier`. `PredicatedResourceCollector` is an interface with two methods which you should implement to collect your resources:
+- `Predicate(doc YamlDocument) (bool, error)`
+  - should return true if the generic resource in the YAML document should be collected 
+- `Collect(doc YamlDocument)`
+  - takes care of the actual collection of your liking
+
+Please see the interface `PredicatedResourceCollector` in `Builder.go` for more information.
+
+```go
+func yourCode() {
+	filename := "/your/file.yaml"
+	yamlBytes := readFile(filename)
+   
+	applier, _, err := apply.New(yourRestConfig)
+	err := applier.NewBuilder().
+		WithNamespace("your-namespace").
+      WithYamlResource(filename, doc).
+      WithCollector(owner).
+		ExecuteApply()
+}
+```
 
 ---
 

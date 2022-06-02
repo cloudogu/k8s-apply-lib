@@ -2,6 +2,7 @@ package apply
 
 import (
 	_ "embed"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -9,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/yaml"
 )
 
 const (
@@ -136,6 +138,26 @@ func TestBuilder_WithOwner(t *testing.T) {
 	})
 }
 
+func TestBuilder_WithCollector(t *testing.T) {
+	t.Run("should add an owner resource for all generic resources", func(t *testing.T) {
+		sut := &Builder{
+			fileToGenericResource: make(map[string][]byte),
+			fileToTemplate:        make(map[string]interface{}),
+			predicatedCollectors:  []PredicatedResourceCollector{},
+		}
+
+		collector := &predicatedNamespaceCollector{}
+
+		// when
+		sut.WithCollector(collector)
+
+		// then
+		assert.NotNil(t, sut.predicatedCollectors)
+		assert.Len(t, sut.predicatedCollectors, 1)
+		assert.Same(t, collector, sut.predicatedCollectors[0])
+	})
+}
+
 func Test_renderTemplate(t *testing.T) {
 	t.Run("should template namespace", func(t *testing.T) {
 		tempDoc := []byte(`hello {{ .Namespace }}`)
@@ -188,6 +210,7 @@ func TestBuilder_ExecuteApply(t *testing.T) {
 			applier:               mockedApplier,
 			fileToGenericResource: make(map[string][]byte),
 			fileToTemplate:        make(map[string]interface{}),
+			predicatedCollectors:  []PredicatedResourceCollector{},
 		}
 
 		// when
@@ -261,6 +284,104 @@ metadata:
 		require.NoError(t, err)
 		mockedApplier.AssertExpectations(t)
 	})
+	t.Run("should collect a single matching resource with two different predicate collectors", func(t *testing.T) {
+		// given
+		expectedNamespaceDoc := YamlDocument(`apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    something: different
+  name: le-namespace
+`)
+		expectedServiceAccountDoc := YamlDocument(`apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: another-service-account
+`)
+		mockedApplier := &mockApplier{}
+		mockedApplier.On("ApplyWithOwner", expectedNamespaceDoc, testNamespace, nil).Return(nil)
+		mockedApplier.On("ApplyWithOwner", expectedServiceAccountDoc, testNamespace, nil).Return(nil)
+
+		sut := &Builder{
+			applier:               mockedApplier,
+			fileToGenericResource: make(map[string][]byte),
+			fileToTemplate:        make(map[string]interface{}),
+			predicatedCollectors:  []PredicatedResourceCollector{},
+		}
+		doc := YamlDocument(multiDocYamlTemplateBytes)
+		templateObj := struct {
+			Namespace string
+		}{
+			Namespace: testNamespace,
+		}
+		nsCollector := &predicatedNamespaceCollector{}
+		saCollector := &predicatedServiceAccountCollector{}
+
+		// when
+		err := sut.WithNamespace(testNamespace).
+			WithYamlResource(testFile2, doc).
+			WithTemplate(testFile2, templateObj).
+			WithCollector(nsCollector).
+			WithCollector(saCollector).
+			ExecuteApply()
+
+		// then
+		require.NoError(t, err)
+		require.NotEmpty(t, nsCollector.collected)
+		assert.Len(t, nsCollector.collected, 1)
+		assert.Equal(t, expectedNamespaceDoc, nsCollector.collected[0])
+		assert.Len(t, saCollector.collected, 1)
+		assert.Equal(t, expectedServiceAccountDoc, saCollector.collected[0])
+		mockedApplier.AssertExpectations(t)
+	})
+}
+
+type predicatedNamespaceCollector struct {
+	collected []YamlDocument
+}
+
+func (nsc *predicatedNamespaceCollector) Predicate(doc YamlDocument) (bool, error) {
+	var namespace = &v1.Namespace{}
+
+	err := yaml.Unmarshal(doc, namespace)
+	if err != nil {
+		return false, fmt.Errorf("failed to unmarshal object [%s] into resource kind %s: %w",
+			string(doc), namespace.Kind, err)
+	}
+
+	return namespace.Kind == "Namespace", nil
+}
+
+func (nsc *predicatedNamespaceCollector) Collect(doc YamlDocument) {
+	if nsc.collected == nil {
+		nsc.collected = []YamlDocument{}
+	}
+
+	nsc.collected = append(nsc.collected, doc)
+}
+
+type predicatedServiceAccountCollector struct {
+	collected []YamlDocument
+}
+
+func (sac *predicatedServiceAccountCollector) Predicate(doc YamlDocument) (bool, error) {
+	var sa = &v1.ServiceAccount{}
+
+	err := yaml.Unmarshal(doc, sa)
+	if err != nil {
+		return false, fmt.Errorf("failed to unmarshal object [%s] into resource kind %s: %w",
+			string(doc), sa.Kind, err)
+	}
+
+	return sa.Kind == "ServiceAccount", nil
+}
+
+func (sac *predicatedServiceAccountCollector) Collect(doc YamlDocument) {
+	if sac.collected == nil {
+		sac.collected = []YamlDocument{}
+	}
+
+	sac.collected = append(sac.collected, doc)
 }
 
 type mockApplier struct {

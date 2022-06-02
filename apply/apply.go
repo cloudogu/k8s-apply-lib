@@ -73,6 +73,7 @@ func (ac *Applier) NewBuilder() *Builder {
 		applier:               ac,
 		fileToGenericResource: make(map[string][]byte),
 		fileToTemplate:        make(map[string]interface{}),
+		predicatedCollectors:  []PredicatedResourceCollector{},
 	}
 }
 
