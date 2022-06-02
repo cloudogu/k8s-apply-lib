@@ -20,10 +20,18 @@ import (
 const testFieldManagerName = "my-app-controller"
 
 func TestNew(t *testing.T) {
-	actual, scheme, _ := New(&rest.Config{}, testFieldManagerName)
+	t.Run("should create a new Applier", func(t *testing.T) {
+		actual, scheme, _ := New(&rest.Config{}, testFieldManagerName)
 
-	require.NotNil(t, actual)
-	assert.NotNil(t, scheme)
+		require.NotNil(t, actual)
+		assert.NotNil(t, scheme)
+	})
+	t.Run("should fail for empty field manager name", func(t *testing.T) {
+		_, _, err := New(&rest.Config{}, "")
+
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "fieldManager must not be empty")
+	})
 }
 
 func Test_Applier_implements_interface(t *testing.T) {

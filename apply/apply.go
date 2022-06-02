@@ -2,7 +2,9 @@ package apply
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -48,6 +50,10 @@ type YamlDocument []byte
 //  applier, scheme, err := apply.New(config, "your-field-manager-name")
 //  yourCrdGroupVersion.AddToScheme(scheme)
 func New(clusterConfig *rest.Config, fieldManager string) (*Applier, *runtime.Scheme, error) {
+	if strings.TrimSpace(fieldManager) == "" {
+		return nil, nil, errors.New("cannot create new Applier: fieldManager must not be empty")
+	}
+
 	gvrMapper, err := createGVRMapper(clusterConfig)
 	if err != nil {
 		return nil, nil, fmt.Errorf("error while creating GVR mapper: %w", err)

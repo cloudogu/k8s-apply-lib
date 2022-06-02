@@ -10,7 +10,7 @@ A library to generically apply Kubernetes resources (similar to `kubectl`).
 func yourCode() {
   yamlBytes := readFile("/your/file.yaml")
   
-  applier, _, err := apply.New(yourRestConfig)
+  applier, _, err := apply.New(yourRestConfig, "your-app-name")
   err := applier.NewBuilder().
     WithNamespace("your-namespace").
     WithYamlResource("/your/file.yaml", doc).
@@ -45,7 +45,7 @@ func yourCode() {
      Namespace string
    }{ Namespace: "your-namespace" }
    
-  applier, _, err := apply.New(yourRestConfig)
+  applier, _, err := apply.New(yourRestConfig, "your-app-name")
   err := applier.NewBuilder().
     WithNamespace("your-namespace").
     WithYamlResource(filename, doc).
@@ -72,7 +72,7 @@ func yourCode() {
       },
    }
    
-  applier, _, err := apply.New(yourRestConfig)
+  applier, _, err := apply.New(yourRestConfig, "your-app-name")
   err := applier.NewBuilder().
     WithNamespace("your-namespace").
     WithOwner(owner).
@@ -95,7 +95,7 @@ func yourCode() {
   filename := "/your/file.yaml"
   yamlBytes := readFile(filename)
    
-  applier, _, err := apply.New(yourRestConfig)
+  applier, _, err := apply.New(yourRestConfig, "your-app-name")
   err := applier.NewBuilder().
     WithNamespace("your-namespace").
     WithYamlResource(filename, doc).
