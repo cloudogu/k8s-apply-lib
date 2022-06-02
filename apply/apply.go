@@ -41,11 +41,11 @@ type YamlDocument []byte
 func New(clusterConfig *rest.Config) (*Applier, *runtime.Scheme, error) {
 	gvrMapper, err := createGVRMapper(clusterConfig)
 	if err != nil {
-		return nil, nil, fmt.Errorf("error while creating k8s apply client: %w", err)
+		return nil, nil, fmt.Errorf("error while creating GVR mapper: %w", err)
 	}
 	dynCli, err := createDynamicClient(clusterConfig)
 	if err != nil {
-		return nil, nil, fmt.Errorf("error while creating k8s apply client: %w", err)
+		return nil, nil, fmt.Errorf("error while creating dynamic client: %w", err)
 	}
 
 	schemeForCrdHandling := runtime.NewScheme()
@@ -71,12 +71,7 @@ func createGVRMapper(config *rest.Config) (meta.RESTMapper, error) {
 
 func createDynamicClient(config *rest.Config) (dynamic.Interface, error) {
 	// 2. Prepare the dynamic client
-	dyn, err := dynamic.NewForConfig(config)
-	if err != nil {
-		return nil, err
-	}
-
-	return dyn, nil
+	return dynamic.NewForConfig(config)
 }
 
 // Apply sends a request to the K8s API with the provided YAML resource in order to apply them to the current cluster.
