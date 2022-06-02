@@ -26,9 +26,10 @@ var GetLogger = func() Logger { return logrus.StandardLogger() }
 // Applier provides a way to apply unstructured Kubernetes resources to the API without knowing their respective schemes
 // beforehand.
 type Applier struct {
-	gvrMapper meta.RESTMapper
-	dynClient dynamic.Interface
-	scheme    *runtime.Scheme
+	gvrMapper    meta.RESTMapper
+	dynClient    dynamic.Interface
+	scheme       *runtime.Scheme
+	fieldManager string
 }
 
 // YamlDocument is an alias type for exactly one single YAML document.
@@ -36,12 +37,17 @@ type YamlDocument []byte
 
 // New returns a `kubectl`-like apply client which operates on the K8s API with YAML resources.
 //
+// Both parameters clusterConfig and fieldManager are mandatory parameters. ClusterConfig contains values how to
+// interact with the Kubernetes API. FieldManager contains a non-empty string to track value changes in the resources
+// which are about to apply so that unexpected changes can be detected. A sensible value might be the name of the
+// calling application. See also: https://kubernetes.io/docs/reference/using-api/server-side-apply/#field-management
+//
 // This method also returns a runtime.Scheme which will be used to properly handle owner references (most important when
 // working with your own CRD). Use it like this:
 //
-//  applier, scheme, err := apply.New(config)
+//  applier, scheme, err := apply.New(config, "your-field-manager-name")
 //  yourCrdGroupVersion.AddToScheme(scheme)
-func New(clusterConfig *rest.Config) (*Applier, *runtime.Scheme, error) {
+func New(clusterConfig *rest.Config, fieldManager string) (*Applier, *runtime.Scheme, error) {
 	gvrMapper, err := createGVRMapper(clusterConfig)
 	if err != nil {
 		return nil, nil, fmt.Errorf("error while creating GVR mapper: %w", err)
@@ -54,9 +60,10 @@ func New(clusterConfig *rest.Config) (*Applier, *runtime.Scheme, error) {
 	schemeForCrdHandling := runtime.NewScheme()
 
 	return &Applier{
-			gvrMapper: gvrMapper,
-			dynClient: dynCli,
-			scheme:    schemeForCrdHandling,
+			gvrMapper:    gvrMapper,
+			dynClient:    dynCli,
+			scheme:       schemeForCrdHandling,
+			fieldManager: fieldManager,
 		},
 		schemeForCrdHandling,
 		nil
@@ -120,12 +127,10 @@ func (ac *Applier) ApplyWithOwner(yamlResource YamlDocument, namespace string, o
 		dr = ac.dynClient.Resource(gvr.Resource)
 	}
 
-	return createOrUpdateResource(context.Background(), k8sObjects, dr)
+	return ac.createOrUpdateResource(context.Background(), k8sObjects, dr)
 }
 
-func createOrUpdateResource(ctx context.Context, desiredResource *unstructured.Unstructured, dr dynamic.ResourceInterface) error {
-	const fieldManager = "k8s-ces-setup"
-
+func (ac *Applier) createOrUpdateResource(ctx context.Context, desiredResource *unstructured.Unstructured, dr dynamic.ResourceInterface) error {
 	GetLogger().Debug(fmt.Sprintf("Patching resource %s/%s/%s", desiredResource.GetKind(), desiredResource.GetAPIVersion(), desiredResource.GetName()))
 	// 6. marshal unstructured resource into proper JSON
 	jsondata, err := json.Marshal(desiredResource)
@@ -137,7 +142,7 @@ func createOrUpdateResource(ctx context.Context, desiredResource *unstructured.U
 	//    types.ApplyPatchType indicates server-side-apply.
 	//    FieldManager specifies the field owner ID.
 	_, err = dr.Patch(ctx, desiredResource.GetName(), types.ApplyPatchType, jsondata, metav1.PatchOptions{
-		FieldManager: fieldManager,
+		FieldManager: ac.fieldManager,
 	})
 	if err != nil {
 		return NewResourceError(err, "error while patching", desiredResource.GetKind(), desiredResource.GetAPIVersion(), desiredResource.GetName())

@@ -17,15 +17,17 @@ import (
 	"k8s.io/client-go/rest"
 )
 
+const testFieldManagerName = "my-app-controller"
+
 func TestNew(t *testing.T) {
-	actual, scheme, _ := New(&rest.Config{})
+	actual, scheme, _ := New(&rest.Config{}, testFieldManagerName)
 
 	require.NotNil(t, actual)
 	assert.NotNil(t, scheme)
 }
 
 func Test_Applier_implements_interface(t *testing.T) {
-	sut, _, err := New(&rest.Config{})
+	sut, _, err := New(&rest.Config{}, testFieldManagerName)
 
 	require.NoError(t, err)
 	assert.Implements(t, (*applier)(nil), sut)
