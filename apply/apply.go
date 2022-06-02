@@ -20,6 +20,9 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
+// GetLogger is an alias function to provide a different logger.
+var GetLogger = func() Logger { return logrus.StandardLogger() }
+
 // Applier provides a way to apply unstructured Kubernetes resources to the API without knowing their respective schemes
 // beforehand.
 type Applier struct {
@@ -81,8 +84,8 @@ func (ac *Applier) Apply(yamlResource YamlDocument, namespace string) error {
 
 // ApplyWithOwner sends a request to the K8s API with the provided YAML resource in order to apply them to the current cluster.
 func (ac *Applier) ApplyWithOwner(yamlResource YamlDocument, namespace string, owningResource metav1.Object) error {
-	logrus.Debug("Applying K8s resource")
-	logrus.Debug(string(yamlResource))
+	GetLogger().Debug("Applying K8s resource")
+	GetLogger().Debug(string(yamlResource))
 
 	// 3. Decode YAML manifest into unstructured.Unstructured
 	var decUnstructured = yaml.NewDecodingSerializer(unstructured.UnstructuredJSONScheme)
@@ -123,7 +126,7 @@ func (ac *Applier) ApplyWithOwner(yamlResource YamlDocument, namespace string, o
 func createOrUpdateResource(ctx context.Context, desiredResource *unstructured.Unstructured, dr dynamic.ResourceInterface) error {
 	const fieldManager = "k8s-ces-setup"
 
-	logrus.Debugf("Patching resource %s/%s/%s", desiredResource.GetKind(), desiredResource.GetAPIVersion(), desiredResource.GetName())
+	GetLogger().Debug(fmt.Sprintf("Patching resource %s/%s/%s", desiredResource.GetKind(), desiredResource.GetAPIVersion(), desiredResource.GetName()))
 	// 6. marshal unstructured resource into proper JSON
 	jsondata, err := json.Marshal(desiredResource)
 	if err != nil {
