@@ -98,8 +98,8 @@ func yourCode() {
   applier, _, err := apply.New(yourRestConfig)
   err := applier.NewBuilder().
     WithNamespace("your-namespace").
-      WithYamlResource(filename, doc).
-      WithCollector(owner).
+    WithYamlResource(filename, doc).
+    WithCollector(owner).
     ExecuteApply()
 }
 ```
