@@ -14,7 +14,6 @@ include build/make/test-unit.mk
 include build/make/static-analysis.mk
 include build/make/clean.mk
 
-K8S_RUN_PRE_TARGETS=install setup-etcd-port-forward
 PRE_COMPILE=vet
 
 .PHONY: default
