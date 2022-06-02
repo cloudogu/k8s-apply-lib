@@ -188,24 +188,13 @@ func TestBuilder_ExecuteApply(t *testing.T) {
 	t.Run("should apply a simple file resource", func(t *testing.T) {
 		// given
 		doc1 := YamlDocument(singleDocYamlBytes)
-		owner := &v1.ServiceAccount{
-			TypeMeta: metav1.TypeMeta{
-				APIVersion: "v1",
-				Kind:       "ServiceAccount",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "le-service-account",
-				Namespace: testNamespace,
-			},
-		}
 		mockedApplier := &mockApplier{}
-		mockedApplier.On("ApplyWithOwner", doc1, testNamespace, owner).Return(nil)
+		mockedApplier.On("ApplyWithOwner", doc1, testNamespace, nil).Return(nil)
 
 		sut := NewBuilder(mockedApplier)
 
 		// when
 		err := sut.WithNamespace(testNamespace).
-			WithOwner(owner).
 			WithYamlResource(testFile1, doc1).
 			ExecuteApply()
 
@@ -215,14 +204,25 @@ func TestBuilder_ExecuteApply(t *testing.T) {
 	})
 	t.Run("should apply file resource with owner", func(t *testing.T) {
 		// given
+		owner := &v1.ConfigMap{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: "v1",
+				Kind:       "Configmap",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "le-config-map",
+				Namespace: testNamespace,
+			},
+		}
 		doc1 := YamlDocument(singleDocYamlBytes)
 		mockedApplier := &mockApplier{}
-		mockedApplier.On("ApplyWithOwner", doc1, testNamespace, nil).Return(nil)
+		mockedApplier.On("ApplyWithOwner", doc1, testNamespace, owner).Return(nil)
 
 		sut := NewBuilder(mockedApplier)
 
 		// when
 		err := sut.WithNamespace(testNamespace).
+			WithOwner(owner).
 			WithYamlResource(testFile1, doc1).
 			ExecuteApply()
 
