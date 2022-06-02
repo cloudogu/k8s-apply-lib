@@ -37,6 +37,18 @@ type PredicatedResourceCollector interface {
 	Collect(doc YamlDocument)
 }
 
+// Builder provides a convenience builder that simplifies the Applier usage and adds often-sought features, like
+// doc splitting or templating.
+//
+// Usage:
+//  applier, _, err := apply.New(restConfig)
+//  NewBuilder(applier).
+//    WithNamespace("my-namespace").
+//	  WithYamlResource(myfile, content).
+//	  WithTemplate(myfile, templateObject).
+//	  WithYamlResource(myfile2, content2).
+//	  WithTemplate(myfile2, templateObject2).
+//    ExecuteApply()
 type Builder struct {
 	applier               applier
 	fileToGenericResource map[string][]byte
@@ -44,6 +56,16 @@ type Builder struct {
 	owningResource        metav1.Object
 	namespace             string
 	predicatedCollectors  []PredicatedResourceCollector
+}
+
+// NewBuilder creates a new builder
+func NewBuilder(applier applier) *Builder {
+	return &Builder{
+		applier:               applier,
+		fileToGenericResource: make(map[string][]byte),
+		fileToTemplate:        make(map[string]interface{}),
+		predicatedCollectors:  []PredicatedResourceCollector{},
+	}
 }
 
 // WithYamlResource adds another YAML resource to the builder.

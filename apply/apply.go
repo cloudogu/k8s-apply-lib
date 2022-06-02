@@ -57,26 +57,6 @@ func New(clusterConfig *rest.Config) (*Applier, *runtime.Scheme, error) {
 		nil
 }
 
-// NewBuilder creates a convenience builder that simplifies the Applier usage and adds often-sought features, like
-// doc splitting or templating
-//
-// Usage:
-//  err := apply.New(restConfig).NewBuilder().
-//    WithNamespace("my-namespace").
-//	  WithYamlResource(myfile, content).
-//	  WithTemplate(myfile, templateObject).
-//	  WithYamlResource(myfile2, content2).
-//	  WithTemplate(myfile2, templateObject2).
-//    ExecuteApply()
-func (ac *Applier) NewBuilder() *Builder {
-	return &Builder{
-		applier:               ac,
-		fileToGenericResource: make(map[string][]byte),
-		fileToTemplate:        make(map[string]interface{}),
-		predicatedCollectors:  []PredicatedResourceCollector{},
-	}
-}
-
 func createGVRMapper(config *rest.Config) (meta.RESTMapper, error) {
 	// 1. Prepare a RESTMapper to find GVR
 	dc, err := discovery.NewDiscoveryClientForConfig(config)

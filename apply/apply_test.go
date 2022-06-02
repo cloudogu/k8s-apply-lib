@@ -130,20 +130,6 @@ metadata:
 	})
 }
 
-func TestApplier_NewBuilder(t *testing.T) {
-	t.Run("should return builder with valid values", func(t *testing.T) {
-		sut, _, _ := New(&rest.Config{})
-
-		// when
-		builder := sut.NewBuilder()
-		// then
-		assert.NotNil(t, builder)
-		assert.NotNil(t, builder.applier)
-		assert.NotNil(t, builder.fileToGenericResource)
-		assert.NotNil(t, builder.fileToTemplate)
-	})
-}
-
 type mockGvrMapper struct {
 	mock.Mock
 }

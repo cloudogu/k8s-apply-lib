@@ -28,12 +28,23 @@ var multiDocYamlBytes []byte
 //go:embed testdata/multi-doc-template.yaml
 var multiDocYamlTemplateBytes []byte
 
+func Test_NewBuilder(t *testing.T) {
+	t.Run("should return builder with valid values", func(t *testing.T) {
+		applier := &mockApplier{}
+
+		// when
+		builder := NewBuilder(applier)
+		// then
+		assert.NotNil(t, builder)
+		assert.NotNil(t, builder.applier)
+		assert.NotNil(t, builder.fileToGenericResource)
+		assert.NotNil(t, builder.fileToTemplate)
+	})
+}
+
 func TestBuilder_WithYamlResource(t *testing.T) {
 	t.Run("should add a single resource", func(t *testing.T) {
-		sut := &Builder{
-			fileToGenericResource: make(map[string][]byte),
-			fileToTemplate:        make(map[string]interface{}),
-		}
+		sut := NewBuilder(nil)
 
 		// when
 		sut.WithYamlResource(testFile1, multiDocYamlBytes)
@@ -43,10 +54,7 @@ func TestBuilder_WithYamlResource(t *testing.T) {
 		assert.Equal(t, multiDocYamlBytes, sut.fileToGenericResource[testFile1])
 	})
 	t.Run("should distinguish between different files", func(t *testing.T) {
-		sut := &Builder{
-			fileToGenericResource: make(map[string][]byte),
-			fileToTemplate:        make(map[string]interface{}),
-		}
+		sut := NewBuilder(nil)
 
 		// when
 		sut.WithYamlResource(testFile1, multiDocYamlBytes).
@@ -65,10 +73,7 @@ func TestBuilder_WithYamlResource(t *testing.T) {
 
 func TestBuilder_WithTemplate(t *testing.T) {
 	t.Run("should add a single template", func(t *testing.T) {
-		sut := &Builder{
-			fileToGenericResource: make(map[string][]byte),
-			fileToTemplate:        make(map[string]interface{}),
-		}
+		sut := NewBuilder(nil)
 		templateObj := struct {
 			Namespace string
 		}{
@@ -83,10 +88,7 @@ func TestBuilder_WithTemplate(t *testing.T) {
 		assert.Equal(t, templateObj, sut.fileToTemplate[testFile2])
 	})
 	t.Run("should maintain two different template objects", func(t *testing.T) {
-		sut := &Builder{
-			fileToGenericResource: make(map[string][]byte),
-			fileToTemplate:        make(map[string]interface{}),
-		}
+		sut := NewBuilder(nil)
 		templateObj1 := struct {
 			Namespace string
 		}{
@@ -114,10 +116,7 @@ func TestBuilder_WithTemplate(t *testing.T) {
 
 func TestBuilder_WithOwner(t *testing.T) {
 	t.Run("should add an owner resource for all generic resources", func(t *testing.T) {
-		sut := &Builder{
-			fileToGenericResource: make(map[string][]byte),
-			fileToTemplate:        make(map[string]interface{}),
-		}
+		sut := NewBuilder(nil)
 		anyObject := &v1.ServiceAccount{
 			TypeMeta: metav1.TypeMeta{
 				APIVersion: "v1",
@@ -140,11 +139,7 @@ func TestBuilder_WithOwner(t *testing.T) {
 
 func TestBuilder_WithCollector(t *testing.T) {
 	t.Run("should add an owner resource for all generic resources", func(t *testing.T) {
-		sut := &Builder{
-			fileToGenericResource: make(map[string][]byte),
-			fileToTemplate:        make(map[string]interface{}),
-			predicatedCollectors:  []PredicatedResourceCollector{},
-		}
+		sut := NewBuilder(nil)
 
 		collector := &predicatedNamespaceCollector{}
 
@@ -206,12 +201,7 @@ func TestBuilder_ExecuteApply(t *testing.T) {
 		mockedApplier := &mockApplier{}
 		mockedApplier.On("ApplyWithOwner", doc1, testNamespace, owner).Return(nil)
 
-		sut := &Builder{
-			applier:               mockedApplier,
-			fileToGenericResource: make(map[string][]byte),
-			fileToTemplate:        make(map[string]interface{}),
-			predicatedCollectors:  []PredicatedResourceCollector{},
-		}
+		sut := NewBuilder(mockedApplier)
 
 		// when
 		err := sut.WithNamespace(testNamespace).
@@ -229,11 +219,7 @@ func TestBuilder_ExecuteApply(t *testing.T) {
 		mockedApplier := &mockApplier{}
 		mockedApplier.On("ApplyWithOwner", doc1, testNamespace, nil).Return(nil)
 
-		sut := &Builder{
-			applier:               mockedApplier,
-			fileToGenericResource: make(map[string][]byte),
-			fileToTemplate:        make(map[string]interface{}),
-		}
+		sut := NewBuilder(mockedApplier)
 
 		// when
 		err := sut.WithNamespace(testNamespace).
@@ -262,11 +248,7 @@ metadata:
 		mockedApplier.On("ApplyWithOwner", expectedNamespaceDoc, testNamespace, nil).Return(nil)
 		mockedApplier.On("ApplyWithOwner", expectedServiceAccountDoc, testNamespace, nil).Return(nil)
 
-		sut := &Builder{
-			applier:               mockedApplier,
-			fileToGenericResource: make(map[string][]byte),
-			fileToTemplate:        make(map[string]interface{}),
-		}
+		sut := NewBuilder(mockedApplier)
 		doc := YamlDocument(multiDocYamlTemplateBytes)
 		templateObj := struct {
 			Namespace string
@@ -302,12 +284,8 @@ metadata:
 		mockedApplier.On("ApplyWithOwner", expectedNamespaceDoc, testNamespace, nil).Return(nil)
 		mockedApplier.On("ApplyWithOwner", expectedServiceAccountDoc, testNamespace, nil).Return(nil)
 
-		sut := &Builder{
-			applier:               mockedApplier,
-			fileToGenericResource: make(map[string][]byte),
-			fileToTemplate:        make(map[string]interface{}),
-			predicatedCollectors:  []PredicatedResourceCollector{},
-		}
+		sut := NewBuilder(mockedApplier)
+
 		doc := YamlDocument(multiDocYamlTemplateBytes)
 		templateObj := struct {
 			Namespace string
