@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    something: important
+  name: le-namespace
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: le-service-account
