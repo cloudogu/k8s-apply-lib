@@ -13,6 +13,7 @@ include build/make/test-common.mk
 include build/make/test-unit.mk
 include build/make/static-analysis.mk
 include build/make/clean.mk
+include build/make/release.mk
 
 PRE_COMPILE=vet
 
