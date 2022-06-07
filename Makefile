@@ -1,5 +1,5 @@
 ARTIFACT_ID=k8s-apply-lib
-VERSION=0.1.0
+VERSION=0.2.0
 GOTAG?=1.18
 MAKEFILES_VERSION=6.0.1
 .DEFAULT_GOAL:=default
@@ -13,6 +13,7 @@ include build/make/test-common.mk
 include build/make/test-unit.mk
 include build/make/static-analysis.mk
 include build/make/clean.mk
+include build/make/release.mk
 
 PRE_COMPILE=vet
 
