@@ -104,6 +104,29 @@ func yourCode() {
 }
 ```
 
+### Advanced: Apply Filter
+
+Sometimes it is required to prevent applying a specific resource contained in a collection of yaml documents. 
+`k8s-apply-lib` provides a way of filtering resources before applying them. 
+`ApplyFilter` is an interface with one method which you should implement to filter your resources:
+- `Predicate(doc YamlDocument) (bool, error)`
+  - should return true if the generic resource in the YAML document should be filter, i.e., it should be applied.
+
+Please see the interface `ApplyFilter` in `Builder.go` for more information.
+
+```go
+func yourCode() {
+  filename := "/your/file.yaml"
+  yamlBytes := readFile(filename)
+   
+  applier, _, err := apply.New(yourRestConfig, "your-app-name")
+  err := applier.NewBuilder().
+    WithNamespace("your-namespace").
+    WithYamlResource(filename, doc).
+	WithApplyFilter(myFilterImplementation).
+    ExecuteApply()
+}
+```
 ---
 
 ### What is the Cloudogu EcoSystem?
