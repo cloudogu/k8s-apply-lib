@@ -37,8 +37,8 @@ type PredicatedResourceCollector interface {
 	Collect(doc YamlDocument)
 }
 
-// ApplyFilter help to filter specific Kubernetes resources that stream through the applier and prevent them from
-// being applied. It is the implementor's task to provide the predicate to match the resource thast should not be
+// ApplyFilter help to filter specific Kubernetes resources that stream through the applier and applies them.
+// It is the implementor's task to provide the predicate to match the resource that should not be
 // applied. The filtered resources are still collected.
 //
 // An example implementation to only apply namespace resources could look like this:
