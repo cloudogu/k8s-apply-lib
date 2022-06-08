@@ -37,6 +37,22 @@ type PredicatedResourceCollector interface {
 	Collect(doc YamlDocument)
 }
 
+// ApplyFilter help to filter specific Kubernetes resources that stream through the applier and prevent them from
+// being applied. It is the implementor's task to provide the predicate to match the resource thast should not be
+// applied. The filtered resources are still collected.
+//
+// An example implementation to only apply namespace resources could look like this:
+//
+//  func (c *filter) Predicate(doc YamlDocument) (bool, error) {
+//    var namespace = &v1.Namespace{}
+//    if err := yaml.Unmarshal(doc, namespace); err != nil { return false, err }
+//    return namespace.Kind == "Namespace", nil
+//  }
+type ApplyFilter interface {
+	// Predicate returns true if the resource being effectively applied matches against a given predicate.
+	Predicate(doc YamlDocument) (bool, error)
+}
+
 // Builder provides a convenience builder that simplifies the Applier usage and adds often-sought features, like
 // doc splitting or templating.
 //
@@ -48,6 +64,7 @@ type PredicatedResourceCollector interface {
 //	  WithTemplate(myfile, templateObject).
 //	  WithYamlResource(myfile2, content2).
 //	  WithTemplate(myfile2, templateObject2).
+//	  WithApplyFilter(myFilterImplementation).
 //    ExecuteApply()
 type Builder struct {
 	applier               applier
@@ -56,6 +73,7 @@ type Builder struct {
 	owningResource        metav1.Object
 	namespace             string
 	predicatedCollectors  []PredicatedResourceCollector
+	applyFilter           ApplyFilter
 }
 
 // NewBuilder creates a new builder.
@@ -103,6 +121,12 @@ func (ab *Builder) WithCollector(collector PredicatedResourceCollector) *Builder
 	return ab
 }
 
+func (ab *Builder) WithApplyFilter(filter ApplyFilter) *Builder {
+	ab.applyFilter = filter
+
+	return ab
+}
+
 // ExecuteApply executes applies pending template renderings to the cumulated resources, collects resources for any
 // configured collectors, and applies the result against the configured Kubernetes API.
 func (ab *Builder) ExecuteApply() error {
@@ -118,6 +142,17 @@ func (ab *Builder) ExecuteApply() error {
 			err = ab.RunCollectors(yamlDoc)
 			if err != nil {
 				return fmt.Errorf("resource collection failed for file %s: %w", filename, err)
+			}
+
+			if ab.applyFilter != nil {
+				ok, err := ab.applyFilter.Predicate(yamlDoc)
+				if err != nil {
+					return fmt.Errorf("filtering resource failed for file %s: %w", filename, err)
+				}
+
+				if !ok {
+					continue
+				}
 			}
 
 			// Use ApplyWithOwner here even if no owner is set because it accepts nil owners
