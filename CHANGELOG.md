@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.3.0] - 2022-06-08
+### Added
+- [#3] Add function `WithApplyFilter` to support filtering resources before applying them.
+
 ## [v0.2.0] - 2022-06-07
 ### Added
 - [#1] move apply functionality from k8s-ces-setup here

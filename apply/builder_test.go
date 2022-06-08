@@ -153,6 +153,21 @@ func TestBuilder_WithCollector(t *testing.T) {
 	})
 }
 
+func TestBuilder_WithApplyFilter(t *testing.T) {
+	t.Run("should add an apply filter resource for all generic resources", func(t *testing.T) {
+		sut := NewBuilder(nil)
+
+		filter := &predicatedNamespaceCollector{}
+
+		// when
+		sut.WithApplyFilter(filter)
+
+		// then
+		assert.NotNil(t, sut.applyFilter)
+		assert.Same(t, filter, sut.applyFilter)
+	})
+}
+
 func Test_renderTemplate(t *testing.T) {
 	t.Run("should template namespace", func(t *testing.T) {
 		tempDoc := []byte(`hello {{ .Namespace }}`)
@@ -260,6 +275,35 @@ metadata:
 		err := sut.WithNamespace(testNamespace).
 			WithYamlResource(testFile2, doc).
 			WithTemplate(testFile2, templateObj).
+			ExecuteApply()
+
+		// then
+		require.NoError(t, err)
+		mockedApplier.AssertExpectations(t)
+	})
+	t.Run("should apply multi doc file resource with filter for service accounts", func(t *testing.T) {
+		// given
+		expectedServiceAccountDoc := YamlDocument(`apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: another-service-account
+`)
+		mockedApplier := &mockApplier{}
+		mockedApplier.On("ApplyWithOwner", expectedServiceAccountDoc, testNamespace, nil).Return(nil)
+
+		sut := NewBuilder(mockedApplier)
+		doc := YamlDocument(multiDocYamlTemplateBytes)
+		templateObj := struct {
+			Namespace string
+		}{
+			Namespace: testNamespace,
+		}
+
+		// when
+		err := sut.WithNamespace(testNamespace).
+			WithYamlResource(testFile2, doc).
+			WithTemplate(testFile2, templateObj).
+			WithApplyFilter(&predicatedServiceAccountCollector{}).
 			ExecuteApply()
 
 		// then
