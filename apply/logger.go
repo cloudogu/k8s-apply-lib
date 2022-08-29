@@ -15,8 +15,6 @@ type Logger interface {
 	Warning(args ...interface{})
 	// Error logs error messages that may jeopardize the success during the run-time.
 	Error(args ...interface{})
-	// Print logs are used to inform the user about the current state of the application and its tasks.
-	Print(args ...interface{})
 
 	// Debugf logs messages that generally should not be visible within a production environment but useful when trying
 	// to pinpoint error situations during the development.
@@ -27,8 +25,6 @@ type Logger interface {
 	Warningf(format string, args ...interface{})
 	// Errorf logs error messages that may jeopardize the success during the run-time.
 	Errorf(format string, args ...interface{})
-	// Printf logs are used to inform the user about the current state of the application and its tasks.
-	Printf(format string, args ...interface{})
 }
 
 // GetLogger is an alias function to provide a different logger for the core.

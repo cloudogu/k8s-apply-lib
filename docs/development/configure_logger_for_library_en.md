@@ -15,17 +15,15 @@ type libraryLogger struct {
 	logger *yourInternalLogger
 }
 
-func (l libraryLogger) Debug(args ...interface{})   { ... }
-func (l libraryLogger) Info(args ...interface{})    { ... }
-func (l libraryLogger) Warning(args ...interface{}) { ... }
-func (l libraryLogger) Error(args ...interface{})   { ... }
-func (l libraryLogger) Print(args ...interface{})   { ... }
+func (l *libraryLogger) Debug(args ...interface{})   { ... }
+func (l *libraryLogger) Info(args ...interface{})    { ... }
+func (l *libraryLogger) Warning(args ...interface{}) { ... }
+func (l *libraryLogger) Error(args ...interface{})   { ... }
 
-func (l libraryLogger) Debugf(format string, args ...interface{})   { ... }
-func (l libraryLogger) Infof(format string, args ...interface{})    { ... }
-func (l libraryLogger) Warningf(format string, args ...interface{}) { ... }
-func (l libraryLogger) Errorf(format string, args ...interface{})   { ... }
-func (l libraryLogger) Printf(format string, args ...interface{})   { ... }
+func (l *libraryLogger) Debugf(format string, args ...interface{})   { ... }
+func (l *libraryLogger) Infof(format string, args ...interface{})    { ... }
+func (l *libraryLogger) Warningf(format string, args ...interface{}) { ... }
+func (l *libraryLogger) Errorf(format string, args ...interface{})   { ... }
 ```
 
 Then we can register our logger to the library:
@@ -43,3 +41,6 @@ func configureLibraryLogger(applicationLogger *yourInternalLogger) {
 	}
 }
 ```
+
+This interface is an independent copy of [cesapp-lib](https://github.com/cloudogu/cesapp-lib/blob/develop/docs/development/the_logging_interface_en.md) 
+where you can find a full explanation about the Logger interface.
