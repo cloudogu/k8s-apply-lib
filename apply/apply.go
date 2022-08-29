@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -21,9 +20,6 @@ import (
 	"k8s.io/client-go/restmapper"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
-
-// GetLogger is an alias function to provide a different logger.
-var GetLogger = func() Logger { return logrus.StandardLogger() }
 
 // Applier provides a way to apply unstructured Kubernetes resources to the API without knowing their respective schemes
 // beforehand.
