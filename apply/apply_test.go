@@ -187,7 +187,7 @@ type mockNsResourceInterface struct {
 }
 
 func (m *mockNsResourceInterface) Namespace(_ string) dynamic.ResourceInterface {
-	return m
+	return nil
 }
 
 func (m *mockNsResourceInterface) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, options metav1.PatchOptions, subresources ...string) (*unstructured.Unstructured, error) {
