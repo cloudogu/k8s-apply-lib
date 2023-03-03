@@ -24,8 +24,8 @@ import (
 // Applier provides a way to apply unstructured Kubernetes resources to the API without knowing their respective schemes
 // beforehand.
 type Applier struct {
-	gvrMapper    meta.RESTMapper
-	dynClient    dynamic.Interface
+	gvrMapper    gvrMapper
+	dynClient    dynClient
 	scheme       *runtime.Scheme
 	fieldManager string
 }

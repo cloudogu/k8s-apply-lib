@@ -1,7 +1,7 @@
 ARTIFACT_ID=k8s-apply-lib
-VERSION=0.4.0
+VERSION=0.4.1
 GOTAG?=1.18
-MAKEFILES_VERSION=6.0.1
+MAKEFILES_VERSION=7.5.0
 .DEFAULT_GOAL:=default
 LINT_VERSION=v1.45.2
 
@@ -14,6 +14,7 @@ include build/make/test-unit.mk
 include build/make/static-analysis.mk
 include build/make/clean.mk
 include build/make/release.mk
+include build/make/mocks.mk
 
 PRE_COMPILE=vet
 
