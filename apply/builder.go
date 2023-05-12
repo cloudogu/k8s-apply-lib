@@ -143,28 +143,37 @@ func (ab *Builder) ExecuteApply() error {
 
 	for filename, yamlDocs := range fileToSingleYamlDocs {
 		for _, yamlDoc := range yamlDocs {
-			err = ab.runCollectors(yamlDoc)
-			if err != nil {
-				return fmt.Errorf("resource collection failed for file %s: %w", filename, err)
-			}
-
-			if ab.applyFilter != nil {
-				ok, err := ab.applyFilter.Predicate(yamlDoc)
-				if err != nil {
-					return fmt.Errorf("filtering resource failed for file %s: %w", filename, err)
-				}
-
-				if !ok {
-					continue
-				}
-			}
-
-			// Use ApplyWithOwner here even if no owner is set because it accepts nil owners
-			err = ab.applier.ApplyWithOwner(yamlDoc, ab.namespace, ab.owningResource)
-			if err != nil {
-				return fmt.Errorf("resource application failed for file %s: %w", filename, err)
+			if err := ab.applyDoc(filename, yamlDoc); err != nil {
+				return err
 			}
 		}
+	}
+
+	return nil
+}
+
+func (ab *Builder) applyDoc(filename string, yamlDoc YamlDocument) error {
+	err := ab.runCollectors(yamlDoc)
+	if err != nil {
+		return fmt.Errorf("resource collection failed for file %s: %w", filename, err)
+	}
+
+	if ab.applyFilter != nil {
+		ok, err := ab.applyFilter.Predicate(yamlDoc)
+		if err != nil {
+			return fmt.Errorf("filtering resource failed for file %s: %w", filename, err)
+		}
+
+		if !ok {
+			// is not filtered -> do not apply
+			return nil
+		}
+	}
+
+	// Use ApplyWithOwner here even if no owner is set because it accepts nil owners
+	err = ab.applier.ApplyWithOwner(yamlDoc, ab.namespace, ab.owningResource)
+	if err != nil {
+		return fmt.Errorf("resource application failed for file %s: %w", filename, err)
 	}
 
 	return nil
