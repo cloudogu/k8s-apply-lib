@@ -1,6 +1,6 @@
 module github.com/cloudogu/k8s-apply-lib
 
-go 1.18
+go 1.20
 
 require (
 	github.com/sirupsen/logrus v1.8.1
