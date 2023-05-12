@@ -2,6 +2,7 @@ package apply
 
 import (
 	_ "embed"
+	"errors"
 	"fmt"
 	"testing"
 
@@ -197,6 +198,16 @@ func Test_renderTemplate(t *testing.T) {
 		require.Error(t, err)
 		assert.Equal(t, "failed to parse template for file /dir/file1.yaml: template: t:1: unclosed action", err.Error())
 	})
+
+	t.Run("should fail to render template", func(t *testing.T) {
+		tempDoc := []byte(`hello {{ .Namespace }}`)
+		templateObj1 := struct{}{}
+
+		_, err := renderTemplate(testFile1, tempDoc, templateObj1)
+
+		require.Error(t, err)
+		assert.ErrorContains(t, err, "failed to render template for file /dir/file1.yaml")
+	})
 }
 
 func TestBuilder_ExecuteApply(t *testing.T) {
@@ -356,6 +367,112 @@ metadata:
 		assert.Equal(t, expectedServiceAccountDoc, saCollector.collected[0])
 		mockedApplier.AssertExpectations(t)
 	})
+	t.Run("should fail to render templates", func(t *testing.T) {
+		// given
+		doc1 := YamlDocument("Invalid template {{.foo}")
+		mockedApplier := &mockApplier{}
+		mockedApplier.On("ApplyWithOwner", doc1, testNamespace, nil).Return(nil)
+
+		sut := NewBuilder(mockedApplier).WithYamlResource(testFile1, doc1).WithTemplate(testFile1, doc1)
+
+		// when
+		err := sut.WithNamespace(testNamespace).
+			WithYamlResource(testFile1, doc1).
+			ExecuteApply()
+
+		// then
+		require.Error(t, err)
+		assert.ErrorContains(t, err, "failed to parse template for file /dir/file1.yaml")
+	})
+	t.Run("should fail to run collectors", func(t *testing.T) {
+		// given
+		owner := &v1.ConfigMap{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: "v1",
+				Kind:       "Configmap",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "le-config-map",
+				Namespace: testNamespace,
+			},
+		}
+		doc1 := YamlDocument(singleDocYamlBytes)
+		mockedApplier := &mockApplier{}
+		mockedApplier.On("ApplyWithOwner", doc1, testNamespace, owner).Return(nil)
+
+		sut := NewBuilder(mockedApplier)
+
+		// when
+		err := sut.WithNamespace(testNamespace).
+			WithOwner(owner).
+			WithYamlResource(testFile1, doc1).
+			WithCollector(&failingPredicateCollector{err: assert.AnError}).
+			ExecuteApply()
+
+		// then
+		require.Error(t, err)
+		assert.ErrorIs(t, errors.Unwrap(err), assert.AnError)
+		assert.ErrorContains(t, err, "resource collection failed for file")
+	})
+	t.Run("should fail to apply filter", func(t *testing.T) {
+		// given
+		owner := &v1.ConfigMap{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: "v1",
+				Kind:       "Configmap",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "le-config-map",
+				Namespace: testNamespace,
+			},
+		}
+		doc1 := YamlDocument(singleDocYamlBytes)
+		mockedApplier := &mockApplier{}
+		mockedApplier.On("ApplyWithOwner", doc1, testNamespace, owner).Return(nil)
+
+		sut := NewBuilder(mockedApplier)
+
+		// when
+		err := sut.WithNamespace(testNamespace).
+			WithOwner(owner).
+			WithYamlResource(testFile1, doc1).
+			WithApplyFilter(&failingPredicateCollector{err: assert.AnError}).
+			ExecuteApply()
+
+		// then
+		require.Error(t, err)
+		assert.ErrorIs(t, errors.Unwrap(err), assert.AnError)
+		assert.ErrorContains(t, err, "filtering resource failed for file")
+	})
+	t.Run("should fail to apply with owner", func(t *testing.T) {
+		// given
+		owner := &v1.ConfigMap{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: "v1",
+				Kind:       "Configmap",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "le-config-map",
+				Namespace: testNamespace,
+			},
+		}
+		doc1 := YamlDocument(singleDocYamlBytes)
+		mockedApplier := &mockApplier{}
+		mockedApplier.On("ApplyWithOwner", doc1, testNamespace, owner).Return(assert.AnError)
+
+		sut := NewBuilder(mockedApplier)
+
+		// when
+		err := sut.WithNamespace(testNamespace).
+			WithOwner(owner).
+			WithYamlResource(testFile1, doc1).
+			ExecuteApply()
+
+		// then
+		require.Error(t, err)
+		assert.ErrorIs(t, errors.Unwrap(err), assert.AnError)
+		assert.ErrorContains(t, err, "resource application failed for file")
+	})
 }
 
 type predicatedNamespaceCollector struct {
@@ -405,6 +522,16 @@ func (sac *predicatedServiceAccountCollector) Collect(doc YamlDocument) {
 
 	sac.collected = append(sac.collected, doc)
 }
+
+type failingPredicateCollector struct {
+	err error
+}
+
+func (fpc *failingPredicateCollector) Predicate(doc YamlDocument) (bool, error) {
+	return false, fpc.err
+}
+
+func (fpc *failingPredicateCollector) Collect(doc YamlDocument) {}
 
 type mockApplier struct {
 	mock.Mock
