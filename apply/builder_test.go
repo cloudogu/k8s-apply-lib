@@ -527,11 +527,11 @@ type failingPredicateCollector struct {
 	err error
 }
 
-func (fpc *failingPredicateCollector) Predicate(doc YamlDocument) (bool, error) {
+func (fpc *failingPredicateCollector) Predicate(YamlDocument) (bool, error) {
 	return false, fpc.err
 }
 
-func (fpc *failingPredicateCollector) Collect(doc YamlDocument) {}
+func (fpc *failingPredicateCollector) Collect(YamlDocument) {}
 
 type mockApplier struct {
 	mock.Mock

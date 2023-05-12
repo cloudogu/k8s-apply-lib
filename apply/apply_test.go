@@ -11,7 +11,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/rest"
 )
 
@@ -284,9 +283,4 @@ metadata:
 		assert.ErrorIs(t, err, assert.AnError)
 		assert.ErrorContains(t, err, "error while patching")
 	})
-}
-
-// use this to re-generate newMockNamespaceInterface
-type namespaceInterface interface {
-	dynamic.NamespaceableResourceInterface
 }

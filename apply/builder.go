@@ -20,15 +20,15 @@ type applier interface {
 //
 // An example implementation to collect namespace resources might look like this:
 //
-//  func (c *collector) Predicate(doc YamlDocument) (bool, error) {
-//    var namespace = &v1.Namespace{}
-//    if err := yaml.Unmarshal(doc, namespace); err != nil { return false, err }
-//    return namespace.Kind == "Namespace", nil
-//  }
+//	func (c *collector) Predicate(doc YamlDocument) (bool, error) {
+//	  var namespace = &v1.Namespace{}
+//	  if err := yaml.Unmarshal(doc, namespace); err != nil { return false, err }
+//	  return namespace.Kind == "Namespace", nil
+//	}
 //
-//  func (c *collector) Collect(doc YamlDocument) {
-//    c.collected = append(c.collected, doc)
-//  }
+//	func (c *collector) Collect(doc YamlDocument) {
+//	  c.collected = append(c.collected, doc)
+//	}
 type PredicatedResourceCollector interface {
 	// Predicate returns true if the resource being effectively applied matches against a given predicate.
 	Predicate(doc YamlDocument) (bool, error)
@@ -43,11 +43,11 @@ type PredicatedResourceCollector interface {
 //
 // An example implementation to only apply namespace resources could look like this:
 //
-//  func (c *filter) Predicate(doc YamlDocument) (bool, error) {
-//    var namespace = &v1.Namespace{}
-//    if err := yaml.Unmarshal(doc, namespace); err != nil { return false, err }
-//    return namespace.Kind == "Namespace", nil
-//  }
+//	func (c *filter) Predicate(doc YamlDocument) (bool, error) {
+//	  var namespace = &v1.Namespace{}
+//	  if err := yaml.Unmarshal(doc, namespace); err != nil { return false, err }
+//	  return namespace.Kind == "Namespace", nil
+//	}
 type ApplyFilter interface {
 	// Predicate returns true if the resource being effectively applied matches against a given predicate.
 	Predicate(doc YamlDocument) (bool, error)
@@ -57,15 +57,16 @@ type ApplyFilter interface {
 // doc splitting or templating.
 //
 // Usage:
-//  applier, _, err := apply.New(restConfig)
-//  NewBuilder(applier).
-//    WithNamespace("my-namespace").
-//	  WithYamlResource(myfile, content).
-//	  WithTemplate(myfile, templateObject).
-//	  WithYamlResource(myfile2, content2).
-//	  WithTemplate(myfile2, templateObject2).
-//	  WithApplyFilter(myFilterImplementation).
-//    ExecuteApply()
+//
+//	 applier, _, err := apply.New(restConfig)
+//	 NewBuilder(applier).
+//	   WithNamespace("my-namespace").
+//		  WithYamlResource(myfile, content).
+//		  WithTemplate(myfile, templateObject).
+//		  WithYamlResource(myfile2, content2).
+//		  WithTemplate(myfile2, templateObject2).
+//		  WithApplyFilter(myFilterImplementation).
+//	   ExecuteApply()
 type Builder struct {
 	applier               applier
 	fileToGenericResource map[string][]byte
@@ -115,12 +116,15 @@ func (ab *Builder) WithNamespace(namespace string) *Builder {
 	return ab
 }
 
+// WithCollector adds the given PredicatedResourceCollector to list of collectors. This method is optional.
 func (ab *Builder) WithCollector(collector PredicatedResourceCollector) *Builder {
 	ab.predicatedCollectors = append(ab.predicatedCollectors, collector)
 
 	return ab
 }
 
+// WithApplyFilter set the given ApplyFilter. This method is optional.
+// When the applyFilter exists, only resources that match this filter will be applied.
 func (ab *Builder) WithApplyFilter(filter ApplyFilter) *Builder {
 	ab.applyFilter = filter
 
@@ -139,7 +143,7 @@ func (ab *Builder) ExecuteApply() error {
 
 	for filename, yamlDocs := range fileToSingleYamlDocs {
 		for _, yamlDoc := range yamlDocs {
-			err = ab.RunCollectors(yamlDoc)
+			err = ab.runCollectors(yamlDoc)
 			if err != nil {
 				return fmt.Errorf("resource collection failed for file %s: %w", filename, err)
 			}
@@ -214,7 +218,7 @@ func (ab *Builder) splitYamlDocs() map[string][]YamlDocument {
 	return allSingleYamlDocs
 }
 
-func (ab *Builder) RunCollectors(doc YamlDocument) error {
+func (ab *Builder) runCollectors(doc YamlDocument) error {
 	for _, predCollector := range ab.predicatedCollectors {
 		ok, err := predCollector.Predicate(doc)
 		if err != nil {
