@@ -43,8 +43,8 @@ type YamlDocument []byte
 // This method also returns a runtime.Scheme which will be used to properly handle owner references (most important when
 // working with your own CRD). Use it like this:
 //
-//  applier, scheme, err := apply.New(config, "your-field-manager-name")
-//  yourCrdGroupVersion.AddToScheme(scheme)
+//	applier, scheme, err := apply.New(config, "your-field-manager-name")
+//	yourCrdGroupVersion.AddToScheme(scheme)
 func New(clusterConfig *rest.Config, fieldManager string) (*Applier, *runtime.Scheme, error) {
 	if strings.TrimSpace(fieldManager) == "" {
 		return nil, nil, errors.New("cannot create new Applier: fieldManager must not be empty")
@@ -101,14 +101,14 @@ func (ac *Applier) ApplyWithOwner(yamlResource YamlDocument, namespace string, o
 	k8sObjects := &unstructured.Unstructured{}
 	_, gvk, err := decUnstructured.Decode(yamlResource, nil, k8sObjects)
 	if err != nil {
-		return fmt.Errorf("could not decode YAML doccument '%s': %w", string(yamlResource), err)
+		return fmt.Errorf("could not decode YAML document '%s': %w", string(yamlResource), err)
 	}
 
 	// 4. Map GVK to GVR
 	// a resource can be uniquely identified by GroupVersionResource, but we need the GVK to find the corresponding GVR
 	gvr, err := ac.gvrMapper.RESTMapping(gvk.GroupKind(), gvk.Version)
 	if err != nil {
-		return fmt.Errorf("could find GVK mapper for GroupKind=%v,Version=%s and YAML doccument '%s': %w", gvk.GroupKind(), gvk.Version, string(yamlResource), err)
+		return fmt.Errorf("could not find GVK mapper for GroupKind=%v,Version=%s and YAML document '%s': %w", gvk.GroupKind(), gvk.Version, string(yamlResource), err)
 	}
 
 	// 5. Obtain REST interface for the GVR
@@ -121,7 +121,7 @@ func (ac *Applier) ApplyWithOwner(yamlResource YamlDocument, namespace string, o
 		if owningResource != nil {
 			err = ctrl.SetControllerReference(owningResource, k8sObjects, ac.scheme)
 			if err != nil {
-				return fmt.Errorf("could not apply YAML doccument '%s': could not set controller reference: %w", string(yamlResource), err)
+				return fmt.Errorf("could not apply YAML document '%s': could not set controller reference: %w", string(yamlResource), err)
 			}
 		}
 	} else {
