@@ -1,9 +1,9 @@
 ARTIFACT_ID=k8s-apply-lib
-VERSION=0.4.1
-GOTAG?=1.18
+VERSION=0.4.2
+GOTAG?=1.20
 MAKEFILES_VERSION=7.5.0
 .DEFAULT_GOAL:=default
-LINT_VERSION=v1.45.2
+LINT_VERSION=v1.52.2
 
 include build/make/variables.mk
 include build/make/self-update.mk

@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.4.2] - 2023-05-15
+### Fixed
+- [#9] Reduce technical debt
+
 ## [v0.4.1] - 2023-03-03
 ### Fixed
 - [#7] Fix DoS vulnerability by upgrading the k8s controller-runtime
