@@ -87,12 +87,12 @@ func createDynamicClient(config *rest.Config) (dynamic.Interface, error) {
 }
 
 // Apply sends a request to the K8s API with the provided YAML resource in order to apply them to the current cluster.
-func (ac *Applier) Apply(yamlResource YamlDocument, namespace string) error {
-	return ac.ApplyWithOwner(yamlResource, namespace, nil)
+func (ac *Applier) Apply(yamlResource YamlDocument, defaultNamespace string) error {
+	return ac.ApplyWithOwner(yamlResource, defaultNamespace, nil)
 }
 
 // ApplyWithOwner sends a request to the K8s API with the provided YAML resource in order to apply them to the current cluster.
-func (ac *Applier) ApplyWithOwner(yamlResource YamlDocument, namespace string, owningResource metav1.Object) error {
+func (ac *Applier) ApplyWithOwner(yamlResource YamlDocument, defaultNamespace string, owningResource metav1.Object) error {
 	GetLogger().Debug("Applying K8s resource")
 	GetLogger().Debug(string(yamlResource))
 
@@ -114,7 +114,12 @@ func (ac *Applier) ApplyWithOwner(yamlResource YamlDocument, namespace string, o
 	// 5. Obtain REST interface for the GVR
 	var dr dynamic.ResourceInterface
 	if gvr.Scope.Name() == meta.RESTScopeNameNamespace {
-		k8sObjects.SetNamespace(namespace)
+		namespace := k8sObjects.GetNamespace()
+		// set default namespace
+		if namespace == "" {
+			namespace = defaultNamespace
+			k8sObjects.SetNamespace(defaultNamespace)
+		}
 		// namespaced resources should specify the namespace
 		dr = ac.dynClient.Resource(gvr.Resource).Namespace(namespace)
 

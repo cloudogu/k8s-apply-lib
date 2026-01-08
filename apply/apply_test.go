@@ -1,9 +1,10 @@
 package apply
 
 import (
+	"testing"
+
 	v1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -207,7 +208,7 @@ func Test_Applier_ApplyWithOwner(t *testing.T) {
 		gvrMapperMock.EXPECT().RESTMapping(expectedResourceGroupKind, "v1").Return(mockedRestMapping, nil)
 
 		apiInterfaceMock := newMockNamespaceInterface(t)
-		apiInterfaceMock.EXPECT().Namespace("mynamespace").Return(nil)
+		apiInterfaceMock.EXPECT().Namespace("ecosystem").Return(nil)
 
 		dynClientMock := newMockDynClient(t)
 		dynClientMock.EXPECT().Resource(mock.Anything).Return(apiInterfaceMock)

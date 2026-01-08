@@ -5,6 +5,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Changed
+- Update go versio to 1.25
+- Update dependencies
+- [#13] If a resource specifies a namespace, that will be used.
+- [#13] Namespace changes to default namespace and will only be used if no namespace is specified in the resource.
 
 ## [v0.5.0] - 2024-09-19
 ### Changed

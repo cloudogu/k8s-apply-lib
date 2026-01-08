@@ -220,7 +220,7 @@ func TestBuilder_ExecuteApply(t *testing.T) {
 		sut := NewBuilder(mockedApplier)
 
 		// when
-		err := sut.WithNamespace(testNamespace).
+		err := sut.WithDefaultNamespace(testNamespace).
 			WithYamlResource(testFile1, doc1).
 			ExecuteApply()
 
@@ -247,7 +247,7 @@ func TestBuilder_ExecuteApply(t *testing.T) {
 		sut := NewBuilder(mockedApplier)
 
 		// when
-		err := sut.WithNamespace(testNamespace).
+		err := sut.WithDefaultNamespace(testNamespace).
 			WithOwner(owner).
 			WithYamlResource(testFile1, doc1).
 			ExecuteApply()
@@ -283,7 +283,7 @@ metadata:
 		}
 
 		// when
-		err := sut.WithNamespace(testNamespace).
+		err := sut.WithDefaultNamespace(testNamespace).
 			WithYamlResource(testFile2, doc).
 			WithTemplate(testFile2, templateObj).
 			ExecuteApply()
@@ -311,7 +311,7 @@ metadata:
 		}
 
 		// when
-		err := sut.WithNamespace(testNamespace).
+		err := sut.WithDefaultNamespace(testNamespace).
 			WithYamlResource(testFile2, doc).
 			WithTemplate(testFile2, templateObj).
 			WithApplyFilter(&predicatedServiceAccountCollector{}).
@@ -351,7 +351,7 @@ metadata:
 		saCollector := &predicatedServiceAccountCollector{}
 
 		// when
-		err := sut.WithNamespace(testNamespace).
+		err := sut.WithDefaultNamespace(testNamespace).
 			WithYamlResource(testFile2, doc).
 			WithTemplate(testFile2, templateObj).
 			WithCollector(nsCollector).
@@ -376,7 +376,7 @@ metadata:
 		sut := NewBuilder(mockedApplier).WithYamlResource(testFile1, doc1).WithTemplate(testFile1, doc1)
 
 		// when
-		err := sut.WithNamespace(testNamespace).
+		err := sut.WithDefaultNamespace(testNamespace).
 			WithYamlResource(testFile1, doc1).
 			ExecuteApply()
 
@@ -403,7 +403,7 @@ metadata:
 		sut := NewBuilder(mockedApplier)
 
 		// when
-		err := sut.WithNamespace(testNamespace).
+		err := sut.WithDefaultNamespace(testNamespace).
 			WithOwner(owner).
 			WithYamlResource(testFile1, doc1).
 			WithCollector(&failingPredicateCollector{err: assert.AnError}).
@@ -433,7 +433,7 @@ metadata:
 		sut := NewBuilder(mockedApplier)
 
 		// when
-		err := sut.WithNamespace(testNamespace).
+		err := sut.WithDefaultNamespace(testNamespace).
 			WithOwner(owner).
 			WithYamlResource(testFile1, doc1).
 			WithApplyFilter(&failingPredicateCollector{err: assert.AnError}).
@@ -463,7 +463,7 @@ metadata:
 		sut := NewBuilder(mockedApplier)
 
 		// when
-		err := sut.WithNamespace(testNamespace).
+		err := sut.WithDefaultNamespace(testNamespace).
 			WithOwner(owner).
 			WithYamlResource(testFile1, doc1).
 			ExecuteApply()

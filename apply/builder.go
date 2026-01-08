@@ -60,7 +60,7 @@ type ApplyFilter interface {
 //
 //	 applier, _, err := apply.New(restConfig)
 //	 NewBuilder(applier).
-//	   WithNamespace("my-namespace").
+//	   WithDefaultNamespace("my-namespace").
 //		  WithYamlResource(myfile, content).
 //		  WithTemplate(myfile, templateObject).
 //		  WithYamlResource(myfile2, content2).
@@ -72,7 +72,7 @@ type Builder struct {
 	fileToGenericResource map[string][]byte
 	fileToTemplate        map[string]interface{}
 	owningResource        metav1.Object
-	namespace             string
+	defaultNamespace      string
 	predicatedCollectors  []PredicatedResourceCollector
 	applyFilter           ApplyFilter
 }
@@ -109,9 +109,10 @@ func (ab *Builder) WithOwner(owningResource metav1.Object) *Builder {
 	return ab
 }
 
-// WithNamespace sets the target namespace to which the file's resources will apply. This method is mandatory.
-func (ab *Builder) WithNamespace(namespace string) *Builder {
-	ab.namespace = namespace
+// WithDefaultNamespace sets the target namespace to which the file's resources will apply if it does not set a
+// namespace itself. This method is mandatory.
+func (ab *Builder) WithDefaultNamespace(namespace string) *Builder {
+	ab.defaultNamespace = namespace
 
 	return ab
 }
@@ -171,7 +172,7 @@ func (ab *Builder) applyDoc(filename string, yamlDoc YamlDocument) error {
 	}
 
 	// Use ApplyWithOwner here even if no owner is set because it accepts nil owners
-	err = ab.applier.ApplyWithOwner(yamlDoc, ab.namespace, ab.owningResource)
+	err = ab.applier.ApplyWithOwner(yamlDoc, ab.defaultNamespace, ab.owningResource)
 	if err != nil {
 		return fmt.Errorf("resource application failed for file %s: %w", filename, err)
 	}
