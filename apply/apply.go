@@ -130,6 +130,9 @@ func (ac *Applier) ApplyWithOwner(yamlResource YamlDocument, defaultNamespace st
 			}
 		} else if namespace != defaultNamespace {
 			labels := k8sObjects.GetLabels()
+			if labels == nil {
+				labels = map[string]string{}
+			}
 			labels["managed-by"] = owningResource.GetName()
 			k8sObjects.SetLabels(labels)
 		}
