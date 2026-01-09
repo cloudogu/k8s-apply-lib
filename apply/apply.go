@@ -123,11 +123,15 @@ func (ac *Applier) ApplyWithOwner(yamlResource YamlDocument, defaultNamespace st
 		// namespaced resources should specify the namespace
 		dr = ac.dynClient.Resource(gvr.Resource).Namespace(namespace)
 
-		if owningResource != nil {
+		if owningResource != nil && namespace == defaultNamespace {
 			err = ctrl.SetControllerReference(owningResource, k8sObjects, ac.scheme)
 			if err != nil {
 				return fmt.Errorf("could not apply YAML document '%s': could not set controller reference: %w", string(yamlResource), err)
 			}
+		} else if namespace != defaultNamespace {
+			labels := k8sObjects.GetLabels()
+			labels["managed-by"] = owningResource.GetName()
+			k8sObjects.SetLabels(labels)
 		}
 	} else {
 		// for cluster-wide resources
