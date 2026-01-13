@@ -128,12 +128,12 @@ func (ac *Applier) ApplyWithOwner(yamlResource YamlDocument, defaultNamespace st
 			if err != nil {
 				return fmt.Errorf("could not apply YAML document '%s': could not set controller reference: %w", string(yamlResource), err)
 			}
-		} else if namespace != defaultNamespace {
+		} else if owningResource != nil && namespace != defaultNamespace {
 			labels := k8sObjects.GetLabels()
 			if labels == nil {
 				labels = map[string]string{}
 			}
-			labels["managed-by"] = owningResource.GetName()
+			labels["cloudogu.com/managed-by"] = owningResource.GetName()
 			k8sObjects.SetLabels(labels)
 		}
 	} else {
